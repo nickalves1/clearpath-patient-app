@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
 import LoginForm from "@/app/(auth)/login/login-form";
 import { acceptLoginChallenge } from "@/app/(auth)/accept-login";
+import { hydraAdminFetch } from "@/app/(auth)/hydra-admin";
 
 export default async function LoginPage({
   searchParams,
@@ -16,8 +17,8 @@ export default async function LoginPage({
   }
 
   if (login_challenge) {
-    const res = await fetch(
-      `${process.env.HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/login?login_challenge=${login_challenge}`
+    const res = await hydraAdminFetch(
+      `/admin/oauth2/auth/requests/login?login_challenge=${login_challenge}`
     );
     const challenge = await res.json();
 

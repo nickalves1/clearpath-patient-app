@@ -1,10 +1,10 @@
 "use server";
 
-const HYDRA_ADMIN_URL = process.env.HYDRA_ADMIN_URL;
+import { hydraAdminFetch } from "@/app/(auth)/hydra-admin";
 
 export async function acceptConsentChallenge(consentChallenge: string, grantScope: string[]) {
-  const res = await fetch(
-    `${HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/consent/accept?consent_challenge=${consentChallenge}`,
+  const res = await hydraAdminFetch(
+    `/admin/oauth2/auth/requests/consent/accept?consent_challenge=${consentChallenge}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -17,8 +17,8 @@ export async function acceptConsentChallenge(consentChallenge: string, grantScop
 }
 
 export async function rejectConsentChallenge(consentChallenge: string) {
-  const res = await fetch(
-    `${HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/consent/reject?consent_challenge=${consentChallenge}`,
+  const res = await hydraAdminFetch(
+    `/admin/oauth2/auth/requests/consent/reject?consent_challenge=${consentChallenge}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
