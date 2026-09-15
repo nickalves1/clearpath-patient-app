@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import ConsentForm from "@/app/(auth)/consent/consent-form";
 import { acceptConsentChallenge } from "@/app/(auth)/accept-consent";
-
-const HYDRA_ADMIN_URL = process.env.HYDRA_ADMIN_URL;
+import { hydraAdminFetch } from "@/app/(auth)/hydra-admin";
 
 export default async function ConsentPage({
   searchParams,
@@ -12,8 +11,8 @@ export default async function ConsentPage({
   const { consent_challenge } = await searchParams;
   if (!consent_challenge) return <div>Missing consent_challenge</div>;
 
-  const res = await fetch(
-    `${HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/consent?consent_challenge=${consent_challenge}`
+  const res = await hydraAdminFetch(
+    `/admin/oauth2/auth/requests/consent?consent_challenge=${consent_challenge}`
   );
   const challenge = await res.json();
 
