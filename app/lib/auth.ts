@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
    {
     id: "hydra",
