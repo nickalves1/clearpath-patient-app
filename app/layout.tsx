@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Roboto, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/app/lib/utils";
 import { Toaster } from "@/app/components/ui/sonner";
+import { SessionProvider } from "next-auth/react";
 
 const jetbrainsMonoHeading = JetBrains_Mono({subsets:['latin'],variable:'--font-heading'});
 
@@ -30,8 +31,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", roboto.variable, jetbrainsMonoHeading.variable)}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster />
+        <SessionProvider>
+          {children}
+          <Toaster />
+        </SessionProvider>
       </body>
     </html>
   );
