@@ -1,72 +1,97 @@
-"use client";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { SigninFormValues, SigninFormSchema } from "@/app/(auth)/auth-definitions";
-import { Button } from "@/app/components/ui/button";
+"use client"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+import {
+  SigninFormValues,
+  SigninFormSchema,
+} from "@/app/(auth)/_lib/auth-definitions"
+import { Button } from "@/app/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/components/ui/card";
+} from "@/app/components/ui/card"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/app/components/ui/field";
-import { Input } from "@/app/components/ui/input";
-import { useEffect, useState } from "react";
-import { createLoginFlow, submitLoginFlow, whoAmI } from "@/app/(auth)/kratos";
-import { acceptLoginChallenge } from "@/app/(auth)/accept-login";
-import { signIn, useSession } from "next-auth/react";
+} from "@/app/components/ui/field"
+import { Input } from "@/app/components/ui/input"
+import { useEffect, useState } from "react"
+import {
+  createLoginFlow,
+  submitLoginFlow,
+  whoAmI,
+  type KratosFlow,
+} from "@/app/(auth)/_lib/kratos"
+import { acceptLoginChallenge } from "@/app/(auth)/_lib/accept-login"
+import { signIn, useSession } from "next-auth/react"
 
+export default function LoginForm({
+  loginChallenge,
+}: {
+  loginChallenge?: string
+}) {
+  const [flow, setFlow] = useState<KratosFlow | null>(null)
+  const form = useForm<SigninFormValues>({
+    resolver: zodResolver(SigninFormSchema),
+    defaultValues: { email: "", password: "" },
+  })
 
-export default function LoginForm({ loginChallenge }: { loginChallenge?: string }) {
-    const [flow, setFlow] = useState<any>(null);
-    const form = useForm<SigninFormValues>({
-        resolver: zodResolver(SigninFormSchema),
-        defaultValues: { email: "", password: "" },
-    });
+  const { status } = useSession()
 
-    const { status } = useSession();
+  useEffect(() => {
+    if (status === "loading") return
+    if (status === "authenticated") return
+    if (!loginChallenge) {
+      signIn("hydra", { redirectTo: "/" })
+      return
+    }
 
-    useEffect(() => {
-      if (status === "loading") return;
-      if (status === "authenticated") return;
-      if (!loginChallenge) {
-        signIn("hydra", { redirectTo: "/" });
-        return;
+    whoAmI().then((session) => {
+      if (session) {
+        acceptLoginChallenge(loginChallenge, session.identity.id).then(
+          (redirectTo) => {
+            window.location.href = redirectTo
+          },
+        )
+        return
       }
-
-      whoAmI().then((session) => {
-        if (session) {
-          acceptLoginChallenge(loginChallenge, session.identity.id).then((redirectTo) => {
-            window.location.href = redirectTo;
-          });
-          return;
-        }
-        createLoginFlow().then(setFlow);
-      });
-    }, [loginChallenge, status]);
+      createLoginFlow().then(setFlow)
+    })
+  }, [loginChallenge, status])
 
   async function onSubmit(data: SigninFormValues) {
-    if (!flow) return;
-    const csrfNode = flow.ui.nodes.find((n: any) => n.attributes.name === "csrf_token");
+    if (!flow) return
+    const csrfNode = flow.ui.nodes.find(
+      (n) => n.attributes.name === "csrf_token",
+    )
+    if (!csrfNode?.attributes.value) return
 
     try {
-        const result = await submitLoginFlow(flow.id, csrfNode.attributes.value, data.email, data.password);
-        if (loginChallenge) {
-        const redirectTo = await acceptLoginChallenge(loginChallenge, result.session.identity.id);
-        window.location.href = redirectTo;
-        } else {
-        toast.success("Logged in!");
-        }
+      const result = await submitLoginFlow(
+        flow.id,
+        csrfNode.attributes.value,
+        data.email,
+        data.password,
+      )
+      if (loginChallenge) {
+        const redirectTo = await acceptLoginChallenge(
+          loginChallenge,
+          result.session.identity.id,
+        )
+        // eslint-disable-next-line react-hooks/immutability
+        window.location.href = redirectTo
+      } else {
+        toast.success("Logged in!")
+      }
     } catch (err) {
-        toast.error((err as Error).message);
+      toast.error((err as Error).message)
     }
   }
 
@@ -75,7 +100,7 @@ export default function LoginForm({ loginChallenge }: { loginChallenge?: string 
       <CardHeader>
         <CardTitle>Login to your account</CardTitle>
         <CardDescription>
-            Enter your email below to login to your account
+          Enter your email below to login to your account
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,7 +119,9 @@ export default function LoginForm({ loginChallenge }: { loginChallenge?: string 
                     placeholder="m@example.com"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -103,15 +130,15 @@ export default function LoginForm({ loginChallenge }: { loginChallenge?: string 
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                    <div className="flex items-center">
-                        <FieldLabel htmlFor="password">Password</FieldLabel>
-                        <a
-                            href="#"
-                            className="ml-auto inline-block text-sm text-muted-foreground underline-offset-4 hover:underline"
-                        >
-                            Forgot your password?
-                        </a>
-                    </div>
+                  <div className="flex items-center">
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <a
+                      href="#"
+                      className="ml-auto inline-block text-sm text-muted-foreground underline-offset-4 hover:underline"
+                    >
+                      Forgot your password?
+                    </a>
+                  </div>
                   <Input
                     {...field}
                     id="password"
@@ -119,7 +146,9 @@ export default function LoginForm({ loginChallenge }: { loginChallenge?: string 
                     placeholder="•••••••••••••"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -128,8 +157,14 @@ export default function LoginForm({ loginChallenge }: { loginChallenge?: string 
                 {form.formState.isSubmitting ? "Login..." : "Login"}
               </Button>
               <FieldDescription className="px-6 text-center">
-                Don't have an account?{" "}
-                <a href={loginChallenge ? `/register?login_challenge=${loginChallenge}` : "/register"}>
+                Don&apos;t have an account?{" "}
+                <a
+                  href={
+                    loginChallenge
+                      ? `/register?login_challenge=${loginChallenge}`
+                      : "/register"
+                  }
+                >
                   Sign up
                 </a>
               </FieldDescription>
@@ -138,5 +173,5 @@ export default function LoginForm({ loginChallenge }: { loginChallenge?: string 
         </form>
       </CardContent>
     </Card>
-  );
+  )
 }

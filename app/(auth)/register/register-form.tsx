@@ -1,56 +1,78 @@
-"use client";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { SignupFormSchema, SignupFormValues } from "@/app/(auth)/auth-definitions";
-import { Button } from "@/app/components/ui/button";
+"use client"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+import {
+  SignupFormSchema,
+  SignupFormValues,
+} from "@/app/(auth)/_lib/auth-definitions"
+import { Button } from "@/app/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/components/ui/card";
+} from "@/app/components/ui/card"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/app/components/ui/field";
-import { Input } from "@/app/components/ui/input";
-import { useEffect, useState } from "react";
-import { createRegistrationFlow, submitRegistrationFlow } from "@/app/(auth)/kratos";
-import { acceptLoginChallenge } from "@/app/(auth)/accept-login";
+} from "@/app/components/ui/field"
+import { Input } from "@/app/components/ui/input"
+import { useEffect, useState } from "react"
+import {
+  createRegistrationFlow,
+  submitRegistrationFlow,
+  type KratosFlow,
+} from "@/app/(auth)/_lib/kratos"
+import { acceptLoginChallenge } from "@/app/(auth)/_lib/accept-login"
 
-export default function RegisterForm({ loginChallenge }: { loginChallenge?: string }) {
+export default function RegisterForm({
+  loginChallenge,
+}: {
+  loginChallenge?: string
+}) {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(SignupFormSchema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
-  });
+  })
 
-    const [flow, setFlow] = useState<any>(null);
+  const [flow, setFlow] = useState<KratosFlow | null>(null)
 
-    useEffect(() => {
-        createRegistrationFlow().then(setFlow);
-    }, []);
+  useEffect(() => {
+    createRegistrationFlow().then(setFlow)
+  }, [])
 
   async function onSubmit(data: SignupFormValues) {
-    if (!flow) return;
-    const csrfNode = flow.ui.nodes.find((n: any) => n.attributes.name === "csrf_token");
+    if (!flow) return
+    const csrfNode = flow.ui.nodes.find(
+      (n) => n.attributes.name === "csrf_token",
+    )
+    if (!csrfNode?.attributes.value) return
 
     try {
-        const result = await submitRegistrationFlow(
-        flow.id, csrfNode.attributes.value, data.email, data.name, data.password
-        );
-        if (loginChallenge) {
-        const redirectTo = await acceptLoginChallenge(loginChallenge, result.identity.id);
-        window.location.href = redirectTo;
-        } else {
-        toast.success("Account created!");
-        }
+      const result = await submitRegistrationFlow(
+        flow.id,
+        csrfNode.attributes.value,
+        data.email,
+        data.name,
+        data.password,
+      )
+      if (loginChallenge) {
+        const redirectTo = await acceptLoginChallenge(
+          loginChallenge,
+          result.identity.id,
+        )
+        // eslint-disable-next-line react-hooks/immutability
+        window.location.href = redirectTo
+      } else {
+        toast.success("Account created!")
+      }
     } catch (err) {
-        toast.error((err as Error).message);
+      toast.error((err as Error).message)
     }
   }
 
@@ -78,7 +100,9 @@ export default function RegisterForm({ loginChallenge }: { loginChallenge?: stri
                     placeholder="John Doe"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -95,7 +119,9 @@ export default function RegisterForm({ loginChallenge }: { loginChallenge?: stri
                     placeholder="m@example.com"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -112,7 +138,9 @@ export default function RegisterForm({ loginChallenge }: { loginChallenge?: stri
                     placeholder="•••••••••••••"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -121,7 +149,9 @@ export default function RegisterForm({ loginChallenge }: { loginChallenge?: stri
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+                  <FieldLabel htmlFor="confirm-password">
+                    Confirm Password
+                  </FieldLabel>
                   <Input
                     {...field}
                     id="confirm-password"
@@ -129,18 +159,30 @@ export default function RegisterForm({ loginChallenge }: { loginChallenge?: stri
                     placeholder="•••••••••••••"
                     aria-invalid={fieldState.invalid}
                   />
-                  <FieldDescription>Please confirm your password.</FieldDescription>
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  <FieldDescription>
+                    Please confirm your password.
+                  </FieldDescription>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
             <Field>
               <Button disabled={form.formState.isSubmitting} type="submit">
-                {form.formState.isSubmitting ? "Creating account..." : "Create Account"}
+                {form.formState.isSubmitting
+                  ? "Creating account..."
+                  : "Create Account"}
               </Button>
               <FieldDescription className="px-6 text-center">
                 Already have an account?{" "}
-                <a href={loginChallenge ? `/login?login_challenge=${loginChallenge}` : "/login"}>
+                <a
+                  href={
+                    loginChallenge
+                      ? `/login?login_challenge=${loginChallenge}`
+                      : "/login"
+                  }
+                >
                   Sign in
                 </a>
               </FieldDescription>
@@ -149,5 +191,5 @@ export default function RegisterForm({ loginChallenge }: { loginChallenge?: stri
         </form>
       </CardContent>
     </Card>
-  );
+  )
 }
