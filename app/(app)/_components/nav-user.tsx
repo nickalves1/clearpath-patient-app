@@ -39,9 +39,7 @@ export function NavUser({
     try {
       const { logout_url } = await createLogoutFlow()
       await fetch(logout_url, { credentials: "include" })
-    } catch {
-      // No active Kratos session — nothing to clear there, continue anyway.
-    }
+    } catch {}
 
     await signOut({ redirect: false })
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
