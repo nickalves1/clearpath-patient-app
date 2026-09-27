@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { MoreVertical, LogOut, Bell, UserCircle } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
@@ -32,6 +33,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
 
   const { data: session } = useSession()
 
@@ -42,10 +44,16 @@ export function NavUser({
     } catch {}
 
     await signOut({ redirect: false })
+
+    if (!session?.idToken) {
+      router.push("/login")
+      return
+    }
+
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href =
       `${process.env.NEXT_PUBLIC_HYDRA_ISSUER}/oauth2/sessions/logout` +
-      `?id_token_hint=${session?.idToken}` +
+      `?id_token_hint=${session.idToken}` +
       `&post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`
   }
 
