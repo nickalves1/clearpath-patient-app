@@ -1,13 +1,19 @@
-import { auth } from "@/app/lib/auth"
-import { NextResponse } from "next/server"
+import { getToken } from "next-auth/jwt"
+import { NextResponse, type NextRequest } from "next/server"
 
-export default auth((req) => {
-  if (!req.auth) {
+export default async function middleware(req: NextRequest) {
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    secureCookie: req.nextUrl.protocol === "https:",
+  })
+
+  if (!token) {
     const loginUrl = new URL("/login", req.url)
 
     return NextResponse.redirect(loginUrl)
   }
-})
+}
 
 export const config = {
   matcher: [
